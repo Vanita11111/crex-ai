@@ -1,3 +1,4 @@
+```python
 import os
 import requests
 import gradio as gr
@@ -9,6 +10,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL = "Qwen/Qwen3-8B"
+
 
 def ask_crex(question):
     if not question.strip():
@@ -24,7 +26,18 @@ def ask_crex(question):
         "messages": [
             {
                 "role": "system",
-                "content": "You are Crex AI, a helpful educational AI assistant. Help with Class 11, Class 12, JEE Main, JEE Advanced, coding, mathematics, physics, chemistry and general questions. Explain clearly and step by step."
+                "content": (
+                    "You are Crex AI, a helpful educational AI assistant. "
+                    "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
+                    "coding, mathematics, physics, chemistry and general questions. "
+                    "Explain answers clearly and step by step. "
+                    "Do NOT use LaTeX, LaTeX commands, or mathematical markup. "
+                    "Write mathematics in simple plain text that is easy to read. "
+                    "For example, write x^2 + 2x + 1 instead of LaTeX notation. "
+                    "Use normal symbols such as +, -, ×, ÷, = and ^ when useful. "
+                    "Keep answers clean, simple and easy to understand. "
+                    "For school and JEE questions, show the calculation steps clearly."
+                )
             },
             {
                 "role": "user",
@@ -68,4 +81,8 @@ app = gr.Interface(
     description="JEE • Class 11–12 • Coding • General AI"
 )
 
-app.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+app.launch(
+    server_name="0.0.0.0",
+    server_port=int(os.environ.get("PORT", 7860))
+)
+```
