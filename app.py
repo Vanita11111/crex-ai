@@ -187,7 +187,7 @@ with gr.Blocks(title="Crex AI") as app:
 
 app.launch(
     head='''
-    <meta name="google-adsense-account" content="ca-pub-5565183897845006">
+    <meta name="google-site-verification" content="HX7BPv-Xd-uxorsvHwmnFc07XJuNDUiA-tnCaVeqrEM" />
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5565183897845006" crossorigin="anonymous"></script>
     ''',
     server_name="0.0.0.0",
