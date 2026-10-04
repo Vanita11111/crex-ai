@@ -1,4 +1,4 @@
-```python
+
 import os
 import re
 import requests
@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_TOKEN = os.getenv("HF_TOKEN")
-
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL = "Qwen/Qwen3-8B"
 
@@ -19,9 +18,9 @@ def clean_answer(text):
         r"\dfrac": "",
         r"\tfrac": "",
         r"\sqrt": "sqrt",
-        r"\times": "x",
-        r"\cdot": "*",
-        r"\div": "/",
+        r"\times": " x ",
+        r"\cdot": " * ",
+        r"\div": " / ",
         r"\leq": "<=",
         r"\geq": ">=",
         r"\neq": "!=",
@@ -47,6 +46,7 @@ def clean_answer(text):
     text = text.replace(r"\]", "")
     text = text.replace(r"\(", "")
     text = text.replace(r"\)", "")
+    text = text.replace("$", "")
 
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -54,7 +54,6 @@ def clean_answer(text):
     text = re.sub(r"\\[a-zA-Z]+", "", text)
     text = text.replace("{", "")
     text = text.replace("}", "")
-    text = text.replace("$", "")
 
     return text.strip()
 
@@ -67,7 +66,7 @@ def ask_crex(question):
         return "Error: HF_TOKEN is not configured."
 
     headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
+        "Authorization": "Bearer " + HF_TOKEN,
         "Content-Type": "application/json"
     }
 
@@ -77,15 +76,15 @@ def ask_crex(question):
             {
                 "role": "system",
                 "content": (
-                    "You are Crex AI, a helpful educational AI assistant. "
-                    "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
-                    "coding, mathematics, physics, chemistry and general questions. "
-                    "Never use LaTeX. Never use dollar signs for math. "
-                    "Never use commands such as \\frac or \\sqrt. "
+                    "You are Crex AI. "
+                    "Answer educational questions about Class 11, Class 12, "
+                    "JEE Main, JEE Advanced, mathematics, physics, chemistry, "
+                    "coding and general topics. "
+                    "NEVER use LaTeX. "
                     "Write mathematics in simple plain text. "
-                    "For example: x^2 + 5x + 6 = 0. "
-                    "Use sqrt(25) = 5 instead of LaTeX. "
-                    "Explain answers clearly and step by step."
+                    "Example: x^2 + 5x + 6 = 0. "
+                    "Use sqrt(25) instead of LaTeX. "
+                    "Explain answers step by step."
                 )
             },
             {
@@ -120,43 +119,28 @@ def ask_crex(question):
 with gr.Blocks(title="Crex AI") as app:
 
     gr.Markdown(
-        """
-# 🤖 Crex AI
-
-**JEE • Class 11–12 • Coding • General AI**
-
-Ask your question by typing or using the microphone.
-"""
+        "# Crex AI\n\n"
+        "JEE • Class 11–12 • Coding • General AI\n\n"
+        "Type your question or record your voice."
     )
 
     question = gr.Textbox(
         lines=5,
         label="Your Question",
-        placeholder="Type your question or use the microphone..."
+        placeholder="Type your question..."
     )
 
     mic = gr.Audio(
         sources=["microphone"],
         type="filepath",
-        label="🎤 Speak your question"
+        label="🎤 Record your question"
     )
 
-    ask_button = gr.Button("Ask Crex AI 🚀")
+    ask_button = gr.Button("Ask Crex AI")
 
     answer = gr.Textbox(
         lines=15,
         label="Crex AI Answer"
-    )
-
-    def speech_to_text(audio):
-        if audio is None:
-            return ""
-        return "Please type your question after recording."
-
-    mic.change(
-        fn=speech_to_text,
-        inputs=mic,
-        outputs=question
     )
 
     ask_button.click(
@@ -176,4 +160,4 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-```
+
