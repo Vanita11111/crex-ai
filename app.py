@@ -1,3 +1,4 @@
+```python id="xj5q2m"
 import os
 import re
 import requests
@@ -185,9 +186,11 @@ with gr.Blocks(title="Crex AI") as app:
 
 
 app.launch(
-    head='<meta name="google-adsense-account" content="ca-pub-5565183897845006">',
+    head='''
+    <meta name="google-adsense-account" content="ca-pub-5565183897845006">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5565183897845006" crossorigin="anonymous"></script>
+    ''',
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-   
-
+```
