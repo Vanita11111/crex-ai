@@ -1,4 +1,4 @@
-```python id="xj5q2m"
+
 import os
 import re
 import requests
@@ -193,4 +193,4 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-```
+
