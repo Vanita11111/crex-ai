@@ -14,56 +14,47 @@ MODEL = "Qwen/Qwen3-8B"
 
 
 def clean_answer(text):
-    # Remove LaTeX delimiters
-    text = re.sub(r"\$\$.*?\$\$", lambda m: m.group(0)[2:-2], text, flags=re.DOTALL)
-    text = re.sub(r"\\\[|\u005c\]|\u005c\(|\u005c\)", "", text)
-
-    # Common LaTeX commands
     replacements = {
         r"\frac": "",
         r"\dfrac": "",
         r"\tfrac": "",
-        r"\sqrt": "√",
-        r"\times": "×",
-        r"\cdot": "·",
-        r"\div": "÷",
-        r"\leq": "≤",
-        r"\geq": "≥",
-        r"\neq": "≠",
-        r"\pm": "±",
-        r"\alpha": "α",
-        r"\beta": "β",
-        r"\gamma": "γ",
-        r"\delta": "δ",
-        r"\theta": "θ",
-        r"\pi": "π",
-        r"\infty": "∞",
-        r"\rightarrow": "→",
-        r"\Rightarrow": "⇒",
+        r"\sqrt": "sqrt",
+        r"\times": "x",
+        r"\cdot": "*",
+        r"\div": "/",
+        r"\leq": "<=",
+        r"\geq": ">=",
+        r"\neq": "!=",
+        r"\pm": "+/-",
+        r"\alpha": "alpha",
+        r"\beta": "beta",
+        r"\gamma": "gamma",
+        r"\delta": "delta",
+        r"\theta": "theta",
+        r"\pi": "pi",
+        r"\infty": "infinity",
+        r"\rightarrow": "->",
+        r"\Rightarrow": "=>",
         r"\left": "",
         r"\right": "",
         r"\text": "",
         r"\mathrm": "",
         r"\mathbf": "",
-        r"\begin": "",
-        r"\end": "",
     }
+
+    text = text.replace("$$", "")
+    text = text.replace(r"\[", "")
+    text = text.replace(r"\]", "")
+    text = text.replace(r"\(", "")
+    text = text.replace(r"\)", "")
 
     for old, new in replacements.items():
         text = text.replace(old, new)
 
-    # Remove remaining LaTeX commands
     text = re.sub(r"\\[a-zA-Z]+", "", text)
-
-    # Remove LaTeX braces
     text = text.replace("{", "")
     text = text.replace("}", "")
-
-    # Remove stray dollar signs
     text = text.replace("$", "")
-
-    # Clean excessive spaces
-    text = re.sub(r"[ \t]+", " ", text)
 
     return text.strip()
 
@@ -89,22 +80,12 @@ def ask_crex(question):
                     "You are Crex AI, a helpful educational AI assistant. "
                     "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
                     "coding, mathematics, physics, chemistry and general questions. "
-
-                    "IMPORTANT FORMATTING RULES: "
-                    "Never use LaTeX or mathematical markup. "
-                    "Never use dollar signs for mathematical formatting. "
-                    "Never use commands such as \\frac, \\sqrt, \\alpha, "
-                    "\\beta, \\begin or \\end. "
-                    "Write everything as normal plain text. "
-
-                    "For mathematics, use simple forms such as: "
-                    "x^2 + 5x + 6 = 0, "
-                    "sqrt(25) = 5, "
-                    "2/3, "
-                    "a × b = c. "
-
-                    "Explain answers clearly and step by step. "
-                    "Make the response easy for students and ordinary users to read."
+                    "Never use LaTeX. Never use dollar signs for math. "
+                    "Never use commands such as \\frac or \\sqrt. "
+                    "Write mathematics in simple plain text. "
+                    "For example: x^2 + 5x + 6 = 0. "
+                    "Use sqrt(25) = 5 instead of LaTeX. "
+                    "Explain answers clearly and step by step."
                 )
             },
             {
@@ -128,7 +109,6 @@ def ask_crex(question):
             return "AI error: " + response.text
 
         result = response.json()
-
         answer = result["choices"][0]["message"]["content"]
 
         return clean_answer(answer)
@@ -137,106 +117,28 @@ def ask_crex(question):
         return "Connection error: " + str(e)
 
 
-# Browser microphone / speech-to-text button
-mic_html = """
-<div style="margin-bottom:10px;">
-    <button
-        id="crex-mic"
-        style="
-            padding:10px 16px;
-            border-radius:10px;
-            border:1px solid #aaa;
-            background:white;
-            cursor:pointer;
-            font-size:15px;
-        ">
-        🎤 Speak
-    </button>
-    <span id="crex-mic-status" style="margin-left:10px;"></span>
-</div>
-
-<script>
-(function() {
-    const button = document.getElementById("crex-mic");
-    const status = document.getElementById("crex-mic-status");
-
-    if (!button) return;
-
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-        status.textContent =
-            "Microphone speech is not supported in this browser.";
-        button.disabled = true;
-        return;
-    }
-
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = "en-IN";
-    recognition.interimResults = false;
-    recognition.continuous = false;
-
-    button.onclick = function() {
-        status.textContent = "Listening...";
-        recognition.start();
-    };
-
-    recognition.onresult = function(event) {
-        const transcript =
-            event.results[0][0].transcript;
-
-        const textarea =
-            document.querySelector("#crex-question textarea");
-
-        if (textarea) {
-            textarea.value = transcript;
-            textarea.dispatchEvent(
-                new Event("input", { bubbles: true })
-            );
-            textarea.dispatchEvent(
-                new Event("change", { bubbles: true })
-            );
-        }
-
-        status.textContent = "Done ✓";
-    };
-
-    recognition.onerror = function(event) {
-        status.textContent =
-            "Microphone error: " + event.error;
-    };
-
-    recognition.onend = function() {
-        if (status.textContent === "Listening...") {
-            status.textContent = "";
-        }
-    };
-})();
-</script>
-"""
-
-
 with gr.Blocks(title="Crex AI") as app:
 
     gr.Markdown(
         """
-        # 🤖 Crex AI
-        **JEE • Class 11–12 • Coding • General AI**
+# 🤖 Crex AI
 
-        Ask your question by typing or using the microphone.
-        """
+**JEE • Class 11–12 • Coding • General AI**
+
+Ask your question by typing or using the microphone.
+"""
     )
-
-    gr.HTML(mic_html)
 
     question = gr.Textbox(
         lines=5,
         label="Your Question",
-        placeholder="Type your question or click 🎤 Speak...",
-        elem_id="crex-question"
+        placeholder="Type your question or use the microphone..."
+    )
+
+    mic = gr.Audio(
+        sources=["microphone"],
+        type="filepath",
+        label="🎤 Speak your question"
     )
 
     ask_button = gr.Button("Ask Crex AI 🚀")
@@ -244,6 +146,17 @@ with gr.Blocks(title="Crex AI") as app:
     answer = gr.Textbox(
         lines=15,
         label="Crex AI Answer"
+    )
+
+    def speech_to_text(audio):
+        if audio is None:
+            return ""
+        return "Please type your question after recording."
+
+    mic.change(
+        fn=speech_to_text,
+        inputs=mic,
+        outputs=question
     )
 
     ask_button.click(
