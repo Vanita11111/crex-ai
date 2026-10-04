@@ -1,4 +1,3 @@
-
 import os
 import re
 import requests
@@ -76,12 +75,10 @@ def ask_crex(question):
             {
                 "role": "system",
                 "content": (
-                    "You are Crex AI. "
-                    "Answer educational questions about Class 11, Class 12, "
-                    "JEE Main, JEE Advanced, mathematics, physics, chemistry, "
-                    "coding and general topics. "
-                    "NEVER use LaTeX. "
-                    "Write mathematics in simple plain text. "
+                    "You are Crex AI. Answer educational questions about "
+                    "Class 11, Class 12, JEE Main, JEE Advanced, mathematics, "
+                    "physics, chemistry, coding and general topics. "
+                    "NEVER use LaTeX. Write mathematics in simple plain text. "
                     "Example: x^2 + 5x + 6 = 0. "
                     "Use sqrt(25) instead of LaTeX. "
                     "Explain answers step by step."
@@ -119,28 +116,59 @@ def ask_crex(question):
 with gr.Blocks(title="Crex AI") as app:
 
     gr.Markdown(
-        "# Crex AI\n\n"
-        "JEE • Class 11–12 • Coding • General AI\n\n"
-        "Type your question or record your voice."
+        "# 🤖 Crex AI\n\n"
+        "JEE • Class 11–12 • Coding • General AI"
     )
 
     question = gr.Textbox(
         lines=5,
         label="Your Question",
-        placeholder="Type your question..."
+        placeholder="Type your question or use the microphone..."
     )
 
-    mic = gr.Audio(
-        sources=["microphone"],
-        type="filepath",
-        label="🎤 Record your question"
-    )
+    mic_button = gr.Button("🎤 Speak")
 
     ask_button = gr.Button("Ask Crex AI")
 
     answer = gr.Textbox(
         lines=15,
         label="Crex AI Answer"
+    )
+
+    mic_button.click(
+        fn=None,
+        inputs=None,
+        outputs=question,
+        js="""
+        async () => {
+            const SpeechRecognition =
+                window.SpeechRecognition ||
+                window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                alert("Speech recognition is not supported. Please use Google Chrome.");
+                return "";
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = "en-IN";
+            recognition.interimResults = false;
+            recognition.continuous = false;
+
+            return await new Promise((resolve) => {
+                recognition.onresult = (event) => {
+                    resolve(event.results[0][0].transcript);
+                };
+
+                recognition.onerror = () => {
+                    alert("Please allow microphone access and try again.");
+                    resolve("");
+                };
+
+                recognition.start();
+            });
+        }
+        """
     )
 
     ask_button.click(
@@ -160,4 +188,3 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-
