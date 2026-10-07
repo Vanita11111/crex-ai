@@ -5,10 +5,11 @@ import gradio as gr
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Crex will try these models in order.
+# Crex tries the models in this order.
 MODELS = [
     "gemini-3.8-flash",
-    "gemini-3.8-flash-lite"
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite"
 ]
 
 
@@ -45,7 +46,7 @@ def ask_gemini(model, question):
         }
     }
 
-    response = requests.post(
+    return requests.post(
         url,
         headers={
             "x-goog-api-key": GEMINI_API_KEY,
@@ -54,8 +55,6 @@ def ask_gemini(model, question):
         json=data,
         timeout=30
     )
-
-    return response
 
 
 def ask_crex(question):
@@ -76,7 +75,6 @@ def ask_crex(question):
 
                 return result["candidates"][0]["content"]["parts"][0]["text"]
 
-            # Try the next model if this model is temporarily unavailable.
             if response.status_code in [429, 500, 503]:
                 last_error = response.text
                 continue
@@ -92,8 +90,7 @@ def ask_crex(question):
             continue
 
     return (
-        "Crex AI is temporarily busy. "
-        "Please try again in a few seconds.\n\n"
+        "Crex AI is temporarily busy. Please try again in a few seconds.\n\n"
         "Technical message: " + last_error
     )
 
@@ -135,6 +132,5 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-
 
 
