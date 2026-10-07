@@ -5,18 +5,18 @@ import gradio as gr
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-API_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/"
-    "models/gemini-3.8-flash:generateContent"
-)
+# Crex will try these models in order.
+MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.8-flash-lite"
+]
 
 
-def ask_crex(question):
-    if not question or not question.strip():
-        return "Please type a question."
-
-    if not GEMINI_API_KEY:
-        return "Error: GEMINI_API_KEY is not configured in Render."
+def ask_gemini(model, question):
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/"
+        "models/" + model + ":generateContent"
+    )
 
     data = {
         "contents": [
@@ -29,7 +29,8 @@ def ask_crex(question):
                             "Mathematics, Physics, Chemistry, Coding and general "
                             "educational questions. "
                             "Explain answers clearly and step by step. "
-                            "Never use LaTeX. Write mathematics in simple plain text. "
+                            "Never use LaTeX. "
+                            "Write mathematics in simple plain text. "
                             "For example, use sqrt(25) instead of LaTeX.\n\n"
                             "User question:\n"
                             + question
@@ -40,38 +41,61 @@ def ask_crex(question):
         ],
         "generationConfig": {
             "temperature": 0.3,
-            "maxOutputTokens": 800,
-            "thinkingConfig": {
-                "thinkingLevel": "low"
-            }
+            "maxOutputTokens": 800
         }
     }
 
-    try:
-        response = requests.post(
-            API_URL,
-            headers={
-                "x-goog-api-key": GEMINI_API_KEY,
-                "Content-Type": "application/json"
-            },
-            json=data,
-            timeout=30
-        )
+    response = requests.post(
+        url,
+        headers={
+            "x-goog-api-key": GEMINI_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json=data,
+        timeout=30
+    )
 
-        if response.status_code != 200:
+    return response
+
+
+def ask_crex(question):
+    if not question or not question.strip():
+        return "Please type a question."
+
+    if not GEMINI_API_KEY:
+        return "Error: GEMINI_API_KEY is not configured in Render."
+
+    last_error = ""
+
+    for model in MODELS:
+        try:
+            response = ask_gemini(model, question)
+
+            if response.status_code == 200:
+                result = response.json()
+
+                return result["candidates"][0]["content"]["parts"][0]["text"]
+
+            # Try the next model if this model is temporarily unavailable.
+            if response.status_code in [429, 500, 503]:
+                last_error = response.text
+                continue
+
             return "Gemini error: " + response.text
 
-        result = response.json()
+        except requests.exceptions.Timeout:
+            last_error = "Request timed out."
+            continue
 
-        answer = result["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            last_error = str(e)
+            continue
 
-        return answer
-
-    except requests.exceptions.Timeout:
-        return "The AI request timed out. Please try again."
-
-    except Exception as e:
-        return "Connection error: " + str(e)
+    return (
+        "Crex AI is temporarily busy. "
+        "Please try again in a few seconds.\n\n"
+        "Technical message: " + last_error
+    )
 
 
 with gr.Blocks(title="Crex AI") as app:
@@ -111,5 +135,6 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
+
 
 
