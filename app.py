@@ -109,5 +109,7 @@ with gr.Blocks(title="Crex AI") as app:
 
 app.launch(
     server_name="0.0.0.0",
-    server_port=int(os.environ.get("PO_
+    server_port=int(os.environ.get("PORT", 7860))
+)
+
 
