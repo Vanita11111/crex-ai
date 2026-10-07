@@ -1,15 +1,14 @@
-
 import os
 import re
 import requests
 import gradio as gr
-from dotenv import load_dotenv
 
-load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-HF_TOKEN = os.getenv("HF_TOKEN")
-API_URL = "https://router.huggingface.co/v1/chat/completions"
-MODEL = "Qwen/Qwen3-8B"
+API_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    "gemini-2.5-flash:generateContent"
+)
 
 
 def clean_answer(text):
@@ -62,42 +61,40 @@ def ask_crex(question):
     if not question or not question.strip():
         return "Please type or speak a question."
 
-    if not HF_TOKEN:
-        return "Error: HF_TOKEN is not configured."
+    if not GEMINI_API_KEY:
+        return "Error: GEMINI_API_KEY is not configured in Render."
 
-    headers = {
-        "Authorization": "Bearer " + HF_TOKEN,
-        "Content-Type": "application/json"
-    }
+    url = API_URL + "?key=" + GEMINI_API_KEY
 
     data = {
-        "model": MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are Crex AI. Answer educational questions about "
-                    "Class 11, Class 12, JEE Main, JEE Advanced, mathematics, "
-                    "physics, chemistry, coding and general topics. "
-                    "NEVER use LaTeX. Write mathematics in simple plain text. "
-                    "Example: x^2 + 5x + 6 = 0. "
-                    "Use sqrt(25) instead of LaTeX. "
-                    "Explain answers step by step."
-                )
-            },
+        "contents": [
             {
                 "role": "user",
-                "content": question
+                "parts": [
+                    {
+                        "text": (
+                            "You are Crex AI. Answer educational questions "
+                            "about Class 11, Class 12, JEE Main, JEE Advanced, "
+                            "mathematics, physics, chemistry, coding and "
+                            "general topics. "
+                            "Never use LaTeX. Write mathematics in simple "
+                            "plain text. Use sqrt(25) instead of LaTeX. "
+                            "Explain answers step by step.\n\n"
+                            "User question:\n" + question
+                        )
+                    }
+                ]
             }
         ],
-        "max_tokens": 800,
-        "temperature": 0.3
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 800
+        }
     }
 
     try:
         response = requests.post(
-            API_URL,
-            headers=headers,
+            url,
             json=data,
             timeout=120
         )
@@ -106,7 +103,8 @@ def ask_crex(question):
             return "AI error: " + response.text
 
         result = response.json()
-        answer = result["choices"][0]["message"]["content"]
+
+        answer = result["candidates"][0]["content"]["parts"][0]["text"]
 
         return clean_answer(answer)
 
@@ -128,7 +126,6 @@ with gr.Blocks(title="Crex AI") as app:
     )
 
     mic_button = gr.Button("🎤 Speak")
-
     ask_button = gr.Button("Ask Crex AI")
 
     answer = gr.Textbox(
@@ -147,22 +144,31 @@ with gr.Blocks(title="Crex AI") as app:
                 window.webkitSpeechRecognition;
 
             if (!SpeechRecognition) {
-                alert("Speech recognition is not supported. Please use Google Chrome.");
+                alert(
+                    "Speech recognition is not supported. "
+                    "Please use Google Chrome."
+                );
                 return "";
             }
 
             const recognition = new SpeechRecognition();
+
             recognition.lang = "en-IN";
             recognition.interimResults = false;
             recognition.continuous = false;
 
             return await new Promise((resolve) => {
+
                 recognition.onresult = (event) => {
-                    resolve(event.results[0][0].transcript);
+                    resolve(
+                        event.results[0][0].transcript
+                    );
                 };
 
                 recognition.onerror = () => {
-                    alert("Please allow microphone access and try again.");
+                    alert(
+                        "Please allow microphone access and try again."
+                    );
                     resolve("");
                 };
 
@@ -187,10 +193,16 @@ with gr.Blocks(title="Crex AI") as app:
 
 app.launch(
     head='''
-    <meta name="google-site-verification" content="HX7BPv-Xd-uxorsvHwmnFc07XJuNDUiA-tnCaVeqrEM" />
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5565183897845006" crossorigin="anonymous"></script>
+    <meta name="google-site-verification"
+          content="HX7BPv-Xd-uxorsvHwmnFc07XJuNDUiA-tnCaVeqrEM">
+
+    <meta name="google-adsense-account"
+          content="ca-pub-5565183897845006">
+
+    <script async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5565183897845006"
+        crossorigin="anonymous"></script>
     ''',
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-
