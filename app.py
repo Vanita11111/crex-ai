@@ -1,4 +1,4 @@
-```python
+
 import os
 import requests
 import gradio as gr
@@ -73,5 +73,65 @@ def ask_crex(question):
             if response.status_code == 200:
                 result = response.json()
 
-                return result["candidates"][0]["content"]
-```
+                return result["candidates"][0]["content"]["parts"][0]["text"]
+
+            # Automatically try the next model if Gemini is temporarily busy.
+            if response.status_code in [429, 500, 503]:
+                last_error = response.text
+                continue
+
+            return "Gemini error: " + response.text
+
+        except requests.exceptions.Timeout:
+            last_error = "The request took too long."
+            continue
+
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    return (
+        "Crex AI is temporarily busy. Please try again.\n\n"
+        "Technical message: " + last_error
+    )
+
+
+with gr.Blocks(title="Crex AI") as app:
+
+    gr.Markdown(
+        "# 🤖 Crex AI\n\n"
+        "JEE • Class 11–12 • Coding • General AI"
+    )
+
+    question = gr.Textbox(
+        lines=5,
+        label="Your Question",
+        placeholder="Type your question here..."
+    )
+
+    ask_button = gr.Button("Ask Crex AI")
+
+    answer = gr.Textbox(
+        lines=15,
+        label="Crex AI Answer"
+    )
+
+    ask_button.click(
+        fn=ask_crex,
+        inputs=question,
+        outputs=answer
+    )
+
+    question.submit(
+        fn=ask_crex,
+        inputs=question,
+        outputs=answer
+    )
+
+
+app.launch(
+    server_name="0.0.0.0",
+    server_port=int(os.environ.get("PORT", 7860))
+)
+
+
