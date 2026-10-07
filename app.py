@@ -5,56 +5,7 @@ import gradio as gr
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Main model: strong reasoning + good speed
-MODELS = [
-    "gemini-3.8-flash",
-    "gemini-3.5-flash-lite"
-]
-
-
-def ask_gemini(model, question):
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/"
-        "models/" + model + ":generateContent"
-    )
-
-    data = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": (
-                            "You are Crex AI, a fast and intelligent educational "
-                            "assistant for Class 11, Class 12, JEE Main, JEE Advanced, "
-                            "Mathematics, Physics, Chemistry, Coding and general "
-                            "education.\n\n"
-                            "Give accurate answers and show important steps. "
-                            "Use simple plain-text mathematics. "
-                            "Do not use LaTeX.\n\n"
-                            "User question:\n" + question
-                        )
-                    }
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": 600,
-            "thinkingConfig": {
-                "thinkingLevel": "medium"
-            }
-        }
-    }
-
-    return requests.post(
-        url,
-        headers={
-            "x-goog-api-key": GEMINI_API_KEY,
-            "Content-Type": "application/json"
-        },
-        json=data,
-        timeout=20
-    )
+MODEL = "gemini-3.8-flash"
 
 
 def ask_crex(question):
@@ -64,36 +15,65 @@ def ask_crex(question):
     if not GEMINI_API_KEY:
         return "Error: GEMINI_API_KEY is not configured in Render."
 
-    last_error = ""
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/"
+        "models/" + MODEL + ":generateContent"
+    )
 
-    for model in MODELS:
-        try:
-            response = ask_gemini(model, question)
+    prompt = (
+        "You are Crex AI, a highly intelligent educational AI assistant.\n\n"
+        "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
+        "Mathematics, Physics, Chemistry, Coding, Python and general "
+        "educational questions.\n\n"
+        "Think carefully before answering.\n"
+        "For difficult questions, use deep reasoning and check your answer.\n"
+        "For mathematics and science, show clear step-by-step working.\n"
+        "Give accurate and understandable final answers.\n"
+        "Use simple plain-text mathematics. Do not use LaTeX.\n\n"
+        "User question:\n" + question
+    )
 
-            if response.status_code == 200:
-                result = response.json()
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "thinkingConfig": {
+                "thinkingLevel": "high"
+            }
+        }
+    }
 
-                return result["candidates"][0]["content"]["parts"][0]["text"]
+    try:
+        response = requests.post(
+            url,
+            headers={
+                "x-goog-api-key": GEMINI_API_KEY,
+                "Content-Type": "application/json"
+            },
+            json=data,
+            timeout=60
+        )
 
-            # Automatically try the next model if Gemini is temporarily busy.
-            if response.status_code in [429, 500, 503]:
-                last_error = response.text
-                continue
-
+        if response.status_code != 200:
             return "Gemini error: " + response.text
 
-        except requests.exceptions.Timeout:
-            last_error = "The request took too long."
-            continue
+        result = response.json()
 
-        except Exception as e:
-            last_error = str(e)
-            continue
+        return result["candidates"][0]["content"]["parts"][0]["text"]
 
-    return (
-        "Crex AI is temporarily busy. Please try again.\n\n"
-        "Technical message: " + last_error
-    )
+    except requests.exceptions.Timeout:
+        return "Crex AI is taking too long. Please try again."
+
+    except Exception as e:
+        return "Crex AI error: " + str(e)
 
 
 with gr.Blocks(title="Crex AI") as app:
@@ -133,5 +113,4 @@ app.launch(
     server_name="0.0.0.0",
     server_port=int(os.environ.get("PORT", 7860))
 )
-
 
