@@ -3,42 +3,45 @@ import os
 import requests
 import gradio as gr
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
+API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = "gemini-3.8-flash"
 
 
 def ask_crex(question):
-    if not question or not question.strip():
+    if not question.strip():
         return "Please type a question."
 
-    if not GEMINI_API_KEY:
-        return "Error: GEMINI_API_KEY is not configured in Render."
+    if not API_KEY:
+        return "Error: GEMINI_API_KEY is not configured."
 
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/"
-        "models/" + MODEL + ":generateContent"
-    )
-
-    prompt = (
-        "You are Crex AI, a highly intelligent educational AI assistant.\n\n"
-        "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
-        "Mathematics, Physics, Chemistry, Coding, Python and general "
-        "educational questions.\n\n"
-        "Think carefully before answering.\n"
-        "For difficult questions, use deep reasoning and check your answer.\n"
-        "For mathematics and science, show clear step-by-step working.\n"
-        "Give accurate and understandable final answers.\n"
-        "Use simple plain-text mathematics. Do not use LaTeX.\n\n"
-        "User question:\n" + question
-    )
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 
     data = {
         "contents": [
             {
                 "parts": [
                     {
-                        "text": prompt
+                        "text": f"""
+You are Crex AI, a powerful educational AI assistant.
+
+Help with:
+- Class 11 and 12
+- JEE Main and JEE Advanced
+- Mathematics
+- Physics
+- Chemistry
+- Coding and Python
+- General education
+
+Think deeply and carefully before answering.
+For difficult problems, verify your reasoning.
+For Mathematics and Physics, show clear step-by-step solutions.
+Give accurate and easy-to-understand answers.
+Use plain text mathematics, not LaTeX.
+
+Question:
+{question}
+"""
                     }
                 ]
             }
@@ -55,7 +58,7 @@ def ask_crex(question):
         response = requests.post(
             url,
             headers={
-                "x-goog-api-key": GEMINI_API_KEY,
+                "x-goog-api-key": API_KEY,
                 "Content-Type": "application/json"
             },
             json=data,
@@ -70,7 +73,7 @@ def ask_crex(question):
         return result["candidates"][0]["content"]["parts"][0]["text"]
 
     except requests.exceptions.Timeout:
-        return "Crex AI is taking too long. Please try again."
+        return "The request took too long. Please try again."
 
     except Exception as e:
         return "Crex AI error: " + str(e)
@@ -89,14 +92,14 @@ with gr.Blocks(title="Crex AI") as app:
         placeholder="Type your question here..."
     )
 
-    ask_button = gr.Button("Ask Crex AI")
+    ask = gr.Button("Ask Crex AI")
 
     answer = gr.Textbox(
         lines=15,
         label="Crex AI Answer"
     )
 
-    ask_button.click(
+    ask.click(
         fn=ask_crex,
         inputs=question,
         outputs=answer
