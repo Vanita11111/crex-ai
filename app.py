@@ -1,15 +1,14 @@
-
+```python
 import os
 import requests
 import gradio as gr
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Crex tries the models in this order.
+# Main model: strong reasoning + good speed
 MODELS = [
     "gemini-3.8-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.1-flash-lite"
+    "gemini-3.5-flash-lite"
 ]
 
 
@@ -25,24 +24,25 @@ def ask_gemini(model, question):
                 "parts": [
                     {
                         "text": (
-                            "You are Crex AI, an educational AI assistant. "
-                            "Help with Class 11, Class 12, JEE Main, JEE Advanced, "
+                            "You are Crex AI, a fast and intelligent educational "
+                            "assistant for Class 11, Class 12, JEE Main, JEE Advanced, "
                             "Mathematics, Physics, Chemistry, Coding and general "
-                            "educational questions. "
-                            "Explain answers clearly and step by step. "
-                            "Never use LaTeX. "
-                            "Write mathematics in simple plain text. "
-                            "For example, use sqrt(25) instead of LaTeX.\n\n"
-                            "User question:\n"
-                            + question
+                            "education.\n\n"
+                            "Give accurate answers and show important steps. "
+                            "Use simple plain-text mathematics. "
+                            "Do not use LaTeX.\n\n"
+                            "User question:\n" + question
                         )
                     }
                 ]
             }
         ],
         "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 800
+            "temperature": 0.2,
+            "maxOutputTokens": 600,
+            "thinkingConfig": {
+                "thinkingLevel": "medium"
+            }
         }
     }
 
@@ -53,7 +53,7 @@ def ask_gemini(model, question):
             "Content-Type": "application/json"
         },
         json=data,
-        timeout=30
+        timeout=20
     )
 
 
@@ -73,64 +73,5 @@ def ask_crex(question):
             if response.status_code == 200:
                 result = response.json()
 
-                return result["candidates"][0]["content"]["parts"][0]["text"]
-
-            if response.status_code in [429, 500, 503]:
-                last_error = response.text
-                continue
-
-            return "Gemini error: " + response.text
-
-        except requests.exceptions.Timeout:
-            last_error = "Request timed out."
-            continue
-
-        except Exception as e:
-            last_error = str(e)
-            continue
-
-    return (
-        "Crex AI is temporarily busy. Please try again in a few seconds.\n\n"
-        "Technical message: " + last_error
-    )
-
-
-with gr.Blocks(title="Crex AI") as app:
-
-    gr.Markdown(
-        "# 🤖 Crex AI\n\n"
-        "JEE • Class 11–12 • Coding • General AI"
-    )
-
-    question = gr.Textbox(
-        lines=5,
-        label="Your Question",
-        placeholder="Type your question here..."
-    )
-
-    ask_button = gr.Button("Ask Crex AI")
-
-    answer = gr.Textbox(
-        lines=15,
-        label="Crex AI Answer"
-    )
-
-    ask_button.click(
-        fn=ask_crex,
-        inputs=question,
-        outputs=answer
-    )
-
-    question.submit(
-        fn=ask_crex,
-        inputs=question,
-        outputs=answer
-    )
-
-
-app.launch(
-    server_name="0.0.0.0",
-    server_port=int(os.environ.get("PORT", 7860))
-)
-
-
+                return result["candidates"][0]["content"]
+```
