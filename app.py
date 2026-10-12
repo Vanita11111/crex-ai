@@ -146,8 +146,7 @@ def ask_crex(question):
 
 with gr.Blocks(
     title="Crex AI",
-    head=ADSENSE_META_TAG,
-    css=CUSTOM_CSS
+    head='<meta name="google-adsense-account" content="ca-pub-5565183897845006">'
 ) as app:
 
     gr.Markdown(
