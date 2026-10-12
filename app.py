@@ -187,8 +187,8 @@ with gr.Blocks(
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "7860"))
-
-   app.launch(
+app.launch(
     server_name="0.0.0.0",
-    server_port=7860
+    server_port=7860,
+    head='<meta name="google-adsense-account" content="ca-pub-5565183897845006">'
 )
