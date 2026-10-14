@@ -109,11 +109,13 @@ def ask_crex(question):
                         .get("content", {})
                         .get("parts", [])
                     )
+
                     answer_text = "\n".join(
                         part["text"]
                         for part in parts
                         if "text" in part
                     )
+
                     if answer_text:
                         return answer_text
 
@@ -133,8 +135,10 @@ def ask_crex(question):
 
         except requests.exceptions.Timeout:
             last_error = "The AI request timed out."
+
         except requests.exceptions.RequestException as e:
             last_error = str(e)
+
         except (ValueError, KeyError, IndexError) as e:
             last_error = "Could not read the AI response: " + str(e)
 
@@ -144,10 +148,7 @@ def ask_crex(question):
     )
 
 
-with gr.Blocks(
-    title="Crex AI",
-    head='<meta name="google-adsense-account" content="ca-pub-5565183897845006">'
-) as app:
+with gr.Blocks(title="Crex AI", css=CUSTOM_CSS) as app:
 
     gr.Markdown(
         "# 🤖 Crex AI\n\n"
@@ -186,9 +187,8 @@ with gr.Blocks(
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "7860"))
-app.launch(
-    server_name="0.0.0.0",
-    server_port=7860,
-    head='<meta name="google-adsense-account" content="ca-pub-5565183897845006">'
-)
+    app.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", "7860")),
+        head=ADSENSE_META_TAG
+    )
