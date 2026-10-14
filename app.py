@@ -10,10 +10,11 @@ MODELS = [
     "gemini-3.5-flash-lite"
 ]
 
-ADSENSE_META_TAG = (
-    '<meta name="google-adsense-account" '
-    'content="ca-pub-5565183897845006">'
-)
+ADSENSE_CODE = """
+<script async
+src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5565183897845006"
+crossorigin="anonymous"></script>
+"""
 
 CUSTOM_CSS = """
 .gradio-container {
@@ -190,5 +191,5 @@ if __name__ == "__main__":
     app.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", "7860")),
-        head=ADSENSE_META_TAG
+        head=ADSENSE_CODE
     )
